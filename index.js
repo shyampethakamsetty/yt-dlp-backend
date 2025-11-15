@@ -1,34 +1,60 @@
 import express from "express";
-import { exec } from "child_process";
 import cors from "cors";
+import ytdlp from "yt-dlp-exec";
 
 const app = express();
 app.use(cors());
 
+// Root endpoint
 app.get("/", (req, res) => {
   res.send("yt-dlp backend running on Render 🚀");
 });
 
+// Health check
 app.get("/health", (req, res) => {
+  console.log("Health check hit");
   res.send("OK");
 });
 
-app.get("/download", (req, res) => {
+// Download endpoint
+app.get("/download", async (req, res) => {
   const videoUrl = req.query.url;
-  if (!videoUrl) return res.status(400).send("Missing ?url=");
 
-  const cmd = `yt-dlp -f "bestvideo[ext=mp4]+bestaudio/best" --merge-output-format mp4 -o - "${videoUrl}"`;
+  console.log("Incoming request → /download:", videoUrl);
 
-  console.log("Downloading:", videoUrl);
+  if (!videoUrl) return res.status(400).send("Missing ?url");
 
-  const process = exec(cmd);
+  try {
+    // Tell browser we are sending video
+    res.setHeader("Content-Type", "video/mp4");
 
-  res.setHeader("Content-Type", "video/mp4");
+    console.log("Starting yt-dlp stream...");
 
-  process.stdout.pipe(res);
-  process.stderr.on("data", data => console.log("yt-dlp:", data));
-  process.on("exit", () => console.log("yt-dlp process finished"));
+    const stream = ytdlp.execStream(videoUrl, {
+      f: "mp4",
+      o: "-",          // Output to stdout
+      quiet: true,
+    });
+
+    // Handle errors
+    stream.on("error", (err) => {
+      console.error("yt-dlp error:", err);
+      res.status(500).send("Error downloading video");
+    });
+
+    // Pipe video stream to client
+    stream.pipe(res);
+
+    stream.on("end", () => {
+      console.log("yt-dlp stream finished");
+    });
+
+  } catch (err) {
+    console.error("Server error:", err);
+    res.status(500).send("Server error");
+  }
 });
 
+// Port
 const port = process.env.PORT || 3000;
 app.listen(port, () => console.log("Server running on port", port));

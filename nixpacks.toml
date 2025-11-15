@@ -1,8 +1,0 @@
-[package]
-schema = 1
-
-[phases.setup]
-nixPkgs = ["yt-dlp"]
-
-[phases.start]
-command = "node index.js"
