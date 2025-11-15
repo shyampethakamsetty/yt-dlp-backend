@@ -1,3 +1,6 @@
+[package]
+schema = 1
+
 [phases.setup]
 nixPkgs = ["yt-dlp"]
 
