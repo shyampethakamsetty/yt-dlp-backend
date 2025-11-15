@@ -1,0 +1,8 @@
+[phases.setup]
+nixPkgs = ["python39", "python39Packages.pip"]
+
+[phases.build]
+commands = ["pip install yt-dlp"]
+
+[phases.start]
+command = "node index.js"
