@@ -1,0 +1,6 @@
+services:
+  - type: web
+    name: yt-dlp-backend
+    env: node
+    buildCommand: nixpacks build .
+    startCommand: node index.js
