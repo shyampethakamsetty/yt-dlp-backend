@@ -1,60 +1,51 @@
 import express from "express";
 import cors from "cors";
-import ytdlp from "yt-dlp-exec";
+import youtubedl from "youtube-dl-exec";
 
 const app = express();
 app.use(cors());
 
-// Root endpoint
 app.get("/", (req, res) => {
-  res.send("yt-dlp backend running on Render 🚀");
+  res.send("yt backend running 🚀");
 });
 
-// Health check
 app.get("/health", (req, res) => {
-  console.log("Health check hit");
+  console.log("Health check");
   res.send("OK");
 });
 
-// Download endpoint
 app.get("/download", async (req, res) => {
-  const videoUrl = req.query.url;
+  const url = req.query.url;
 
-  console.log("Incoming request → /download:", videoUrl);
+  console.log("Incoming:", url);
 
-  if (!videoUrl) return res.status(400).send("Missing ?url");
+  if (!url) return res.status(400).send("Missing ?url");
 
   try {
-    // Tell browser we are sending video
     res.setHeader("Content-Type", "video/mp4");
 
-    console.log("Starting yt-dlp stream...");
-
-    const stream = ytdlp.execStream(videoUrl, {
-      f: "mp4",
-      o: "-",          // Output to stdout
-      quiet: true,
+    const stream = youtubedl.execStream(url, {
+      format: "mp4",
+      output: "-",
+      quiet: true
     });
 
-    // Handle errors
-    stream.on("error", (err) => {
-      console.error("yt-dlp error:", err);
-      res.status(500).send("Error downloading video");
+    stream.on("error", err => {
+      console.error("youtube-dl error:", err);
+      res.status(500).send("Error downloading");
     });
 
-    // Pipe video stream to client
     stream.pipe(res);
 
     stream.on("end", () => {
-      console.log("yt-dlp stream finished");
+      console.log("Stream finished");
     });
 
-  } catch (err) {
-    console.error("Server error:", err);
+  } catch (e) {
+    console.error(e);
     res.status(500).send("Server error");
   }
 });
 
-// Port
-const port = process.env.PORT || 3000;
+const port = process.env.PORT || 10000;
 app.listen(port, () => console.log("Server running on port", port));
